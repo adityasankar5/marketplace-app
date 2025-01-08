@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Grid,
   Card,
@@ -14,6 +15,7 @@ function ProductList() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProducts();
@@ -37,7 +39,10 @@ function ProductList() {
     <Grid container spacing={3}>
       {products.map((product) => (
         <Grid item xs={12} sm={6} md={4} key={product.id}>
-          <Card>
+          <Card
+            onClick={() => navigate(`/product/${product.id}`)}
+            sx={{ cursor: "pointer" }}
+          >
             <CardMedia
               component="img"
               height="140"

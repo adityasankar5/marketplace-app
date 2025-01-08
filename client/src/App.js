@@ -10,6 +10,7 @@ import Navbar from "./components/Navbar";
 import ProductList from "./components/ProductList";
 import AddProduct from "./components/AddProduct";
 import "./App.css";
+import ProductDetails from "./components/ProductDetails";
 
 const theme = createTheme({
   palette: {
@@ -33,6 +34,7 @@ function App() {
             <Routes>
               <Route path="/" element={<ProductList />} />
               <Route path="/add-product" element={<AddProduct />} />
+              <Route path="/product/:id" element={<ProductDetails />} />
             </Routes>
           </Container>
         </div>

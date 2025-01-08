@@ -57,6 +57,29 @@ const productController = {
       });
     }
   },
+  getProductById: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const record = await base("Products").find(id);
+
+      if (!record) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      const product = {
+        id: record.id,
+        ...record.fields,
+      };
+
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      res.status(500).json({
+        error: "Error fetching product",
+        details: error.message,
+      });
+    }
+  },
 };
 
 module.exports = productController;
