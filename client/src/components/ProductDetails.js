@@ -9,6 +9,7 @@ import {
   Box,
   CircularProgress,
   Alert,
+  Snackbar,
 } from "@mui/material";
 import { api } from "../services/api";
 
@@ -18,6 +19,10 @@ function ProductDetails() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [orderStatus, setOrderStatus] = useState({
+    loading: false,
+    error: null,
+  });
 
   useEffect(() => {
     fetchProductDetails();
@@ -29,6 +34,7 @@ function ProductDetails() {
       setProduct(response.data);
       setLoading(false);
     } catch (err) {
+      console.error("Error fetching product:", err);
       setError("Error fetching product details");
       setLoading(false);
     }
@@ -36,19 +42,58 @@ function ProductDetails() {
 
   const handlePurchase = async () => {
     try {
-      await api.createOrder({
+      setOrderStatus({ loading: true, error: null });
+
+      // Format today's date as DD-MM-YYYY
+      const today = new Date();
+      const formattedDate = `${today.getDate()}-${
+        today.getMonth() + 1
+      }-${today.getFullYear()}`;
+
+      const orderData = {
         productId: id,
         quantity: 1,
-      });
+        status: "Pending",
+        createdAt: formattedDate,
+        totalPrice: product.Price, // Assuming product.Price contains the price
+      };
+
+      console.log("Sending order with data:", orderData);
+
+      const response = await api.createOrder(orderData);
+      console.log("Order response:", response);
+
+      setOrderStatus({ loading: false, error: null });
       navigate("/orders");
     } catch (err) {
-      setError("Error placing order");
+      console.error("Error placing order:", err);
+      setOrderStatus({
+        loading: false,
+        error: err.response?.data?.details || "Error placing order",
+      });
     }
   };
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Alert severity="error">{error}</Alert>;
-  if (!product) return <Alert severity="info">Product not found</Alert>;
+  if (loading)
+    return (
+      <Container sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        <CircularProgress />
+      </Container>
+    );
+
+  if (error)
+    return (
+      <Container sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+
+  if (!product)
+    return (
+      <Container sx={{ mt: 4 }}>
+        <Alert severity="info">Product not found</Alert>
+      </Container>
+    );
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -82,14 +127,23 @@ function ProductDetails() {
                 color="primary"
                 size="large"
                 onClick={handlePurchase}
+                disabled={orderStatus.loading}
                 sx={{ mt: 2 }}
               >
-                Purchase Now
+                {orderStatus.loading ? "Processing..." : "Purchase Now"}
               </Button>
             </Box>
           </Grid>
         </Grid>
       </Paper>
+
+      <Snackbar
+        open={!!orderStatus.error}
+        autoHideDuration={6000}
+        onClose={() => setOrderStatus((prev) => ({ ...prev, error: null }))}
+      >
+        <Alert severity="error">{orderStatus.error}</Alert>
+      </Snackbar>
     </Container>
   );
 }

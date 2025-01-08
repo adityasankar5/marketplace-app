@@ -11,6 +11,7 @@ import ProductList from "./components/ProductList";
 import AddProduct from "./components/AddProduct";
 import "./App.css";
 import ProductDetails from "./components/ProductDetails";
+import Orders from "./components/Orders";
 
 const theme = createTheme({
   palette: {
@@ -35,6 +36,7 @@ function App() {
               <Route path="/" element={<ProductList />} />
               <Route path="/add-product" element={<AddProduct />} />
               <Route path="/product/:id" element={<ProductDetails />} />
+              <Route path="/orders" element={<Orders />} />
             </Routes>
           </Container>
         </div>

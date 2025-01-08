@@ -16,6 +16,9 @@ function Navbar() {
           <Button color="inherit" component={RouterLink} to="/add-product">
             Add Product
           </Button>
+          <Button color="inherit" component={RouterLink} to="/orders">
+            Orders
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>
