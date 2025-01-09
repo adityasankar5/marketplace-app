@@ -3,8 +3,10 @@ const router = express.Router();
 const orderController = require("../controllers/orderController");
 const { authenticate, requireRole } = require("../middleware/auth");
 
-router.use(authenticate); // All order routes require authentication
+// Apply authentication middleware to all routes
+router.use(authenticate);
 
+// Order routes
 router.post("/", requireRole("buyer"), orderController.createOrder);
 router.get("/my-orders", requireRole("buyer"), orderController.getMyOrders);
 router.get(

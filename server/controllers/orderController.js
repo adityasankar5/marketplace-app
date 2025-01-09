@@ -1,7 +1,6 @@
 const base = require("../config/airtable");
 
 const orderController = {
-  // Create order
   createOrder: async (req, res) => {
     try {
       const { productId, quantity } = req.body;
@@ -16,28 +15,37 @@ const orderController = {
       const totalPrice = product.fields.Price * quantity;
       const sellerId = product.fields.SellerId;
 
+      // Format date for Airtable
+      const today = new Date().toISOString().split("T")[0];
+
+      const orderData = {
+        ProductId: productId,
+        BuyerId: buyerId,
+        SellerId: sellerId,
+        Quantity: parseInt(quantity),
+        TotalPrice: parseFloat(totalPrice.toFixed(2)),
+        Status: "Pending",
+        CreatedAt: today,
+      };
+
+      console.log("Creating order with data:", orderData);
+
       const record = await base("Orders").create([
         {
-          fields: {
-            ProductId: productId,
-            BuyerId: buyerId,
-            SellerId: sellerId,
-            Quantity: parseInt(quantity),
-            TotalPrice: totalPrice,
-            Status: "Pending",
-            CreatedAt: new Date().toISOString(),
-          },
+          fields: orderData,
         },
       ]);
 
       res.json(record);
     } catch (error) {
       console.error("Error creating order:", error);
-      res.status(500).json({ error: "Error creating order" });
+      res.status(500).json({
+        error: "Error creating order",
+        details: error.message,
+      });
     }
   },
 
-  // Get orders for buyer
   getMyOrders: async (req, res) => {
     try {
       const records = await base("Orders")
@@ -65,11 +73,13 @@ const orderController = {
       res.json(orders);
     } catch (error) {
       console.error("Error fetching orders:", error);
-      res.status(500).json({ error: "Error fetching orders" });
+      res.status(500).json({
+        error: "Error fetching orders",
+        details: error.message,
+      });
     }
   },
 
-  // Get orders for seller
   getReceivedOrders: async (req, res) => {
     try {
       const records = await base("Orders")
@@ -100,37 +110,57 @@ const orderController = {
       res.json(orders);
     } catch (error) {
       console.error("Error fetching orders:", error);
-      res.status(500).json({ error: "Error fetching orders" });
+      res.status(500).json({
+        error: "Error fetching orders",
+        details: error.message,
+      });
     }
   },
-
-  // Update order status
   updateOrderStatus: async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
 
-      // Verify seller ownership
-      const existingOrder = await base("Orders").find(id);
-      if (existingOrder.fields.SellerId !== req.user.id) {
+      // Validate status
+      const validStatuses = ["Pending", "Completed", "Cancelled"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          error: "Invalid status",
+          details: "Status must be Pending, Completed, or Cancelled",
+        });
+      }
+
+      // Get the order to verify seller
+      const order = await base("Orders").find(id);
+
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      // Verify that the user is the seller of this order
+      if (order.fields.SellerId !== req.user.id) {
         return res
           .status(403)
           .json({ error: "Unauthorized to update this order" });
       }
 
-      const record = await base("Orders").update([
+      // Update the order status
+      const updatedOrder = await base("Orders").update([
         {
-          id,
+          id: id,
           fields: {
             Status: status,
           },
         },
       ]);
 
-      res.json(record);
+      res.json(updatedOrder);
     } catch (error) {
-      console.error("Error updating order:", error);
-      res.status(500).json({ error: "Error updating order" });
+      console.error("Error updating order status:", error);
+      res.status(500).json({
+        error: "Error updating order status",
+        details: error.message,
+      });
     }
   },
 };
