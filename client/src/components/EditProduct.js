@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Paper,
   TextField,
@@ -7,12 +7,18 @@ import {
   Box,
   Alert,
   Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
 
-function AddProduct() {
+function EditProduct() {
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -22,6 +28,31 @@ function AddProduct() {
     ImageUrl: "",
   });
   const [error, setError] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [id]);
+
+  const fetchProduct = async () => {
+    try {
+      const response = await api.getProductById(id);
+      const product = response.data;
+
+      // Verify ownership
+      if (product.SellerId !== user.id) {
+        navigate("/");
+        return;
+      }
+
+      setFormData(product);
+      setLoading(false);
+    } catch (err) {
+      setError("Error fetching product");
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -36,22 +67,31 @@ function AddProduct() {
       const productData = {
         ...formData,
         Price: parseFloat(formData.Price),
-        SellerId: user.id,
-        CreatedAt: new Date().toISOString(),
       };
 
-      await api.createProduct(productData);
+      await api.updateProduct(id, productData);
       navigate("/");
     } catch (err) {
-      setError("Error creating product");
+      setError("Error updating product");
     }
   };
+
+  const handleDelete = async () => {
+    try {
+      await api.deleteProduct(id);
+      navigate("/");
+    } catch (err) {
+      setError("Error deleting product");
+    }
+  };
+
+  if (loading) return <CircularProgress />;
 
   return (
     <Container maxWidth="sm">
       <Paper sx={{ p: 3, mt: 4 }}>
         <Typography variant="h5" gutterBottom>
-          Add New Product
+          Edit Product
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -99,19 +139,36 @@ function AddProduct() {
             margin="normal"
             required
           />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ mt: 3 }}
-          >
-            Add Product
-          </Button>
+          <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
+            <Button type="submit" variant="contained" color="primary" fullWidth>
+              Update Product
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              fullWidth
+              onClick={() => setDeleteDialog(true)}
+            >
+              Delete Product
+            </Button>
+          </Box>
         </Box>
       </Paper>
+
+      <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this product?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialog(false)}>Cancel</Button>
+          <Button onClick={handleDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
 
-export default AddProduct;
+export default EditProduct;

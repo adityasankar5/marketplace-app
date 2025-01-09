@@ -1,106 +1,136 @@
 const base = require("../config/airtable");
 
 const orderController = {
+  // Create order
   createOrder: async (req, res) => {
     try {
-      console.log("Creating order with data:", req.body);
-      const { productId, quantity, status, createdAt, totalPrice } = req.body;
+      const { productId, quantity } = req.body;
+      const buyerId = req.user.id;
 
-      // Validate required fields
-      if (!productId || !quantity || !status || !createdAt || !totalPrice) {
-        return res.status(400).json({
-          error: "Missing required fields",
-          details:
-            "All fields are required: productId, quantity, status, createdAt, totalPrice",
-        });
+      // Get product details
+      const product = await base("Products").find(productId);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
       }
 
-      // Create order record with all fields
-      const orderFields = {
-        ProductId: productId,
-        Quantity: parseInt(quantity),
-        Status: status,
-        CreatedAt: createdAt,
-        TotalPrice: parseFloat(totalPrice),
-      };
+      const totalPrice = product.fields.Price * quantity;
+      const sellerId = product.fields.SellerId;
 
-      console.log("Creating order with fields:", orderFields);
-
-      const order = await base("Orders").create([
+      const record = await base("Orders").create([
         {
-          fields: orderFields,
+          fields: {
+            ProductId: productId,
+            BuyerId: buyerId,
+            SellerId: sellerId,
+            Quantity: parseInt(quantity),
+            TotalPrice: totalPrice,
+            Status: "Pending",
+            CreatedAt: new Date().toISOString(),
+          },
         },
       ]);
 
-      console.log("Order created successfully:", order);
-      res.json(order);
+      res.json(record);
     } catch (error) {
       console.error("Error creating order:", error);
-      res.status(500).json({
-        error: "Error creating order",
-        details: error.message,
-      });
+      res.status(500).json({ error: "Error creating order" });
     }
   },
 
-  getOrders: async (req, res) => {
+  // Get orders for buyer
+  getMyOrders: async (req, res) => {
     try {
-      console.log("Fetching orders...");
       const records = await base("Orders")
         .select({
+          filterByFormula: `BuyerId = '${req.user.id}'`,
           sort: [{ field: "CreatedAt", direction: "desc" }],
         })
         .all();
 
-      // Map the records to include all necessary fields
-      const orders = records.map((record) => ({
-        id: record.id,
-        productId: record.fields.ProductId,
-        quantity: record.fields.Quantity,
-        status: record.fields.Status,
-        createdAt: record.fields.CreatedAt,
-        totalPrice: record.fields.TotalPrice,
-      }));
+      const orders = await Promise.all(
+        records.map(async (record) => {
+          const product = await base("Products").find(record.fields.ProductId);
+          return {
+            id: record.id,
+            ProductId: record.fields.ProductId,
+            ProductName: product.fields.Name,
+            Quantity: record.fields.Quantity,
+            TotalPrice: record.fields.TotalPrice,
+            Status: record.fields.Status,
+            CreatedAt: record.fields.CreatedAt,
+          };
+        })
+      );
 
-      console.log("Successfully fetched orders:", orders.length);
       res.json(orders);
     } catch (error) {
       console.error("Error fetching orders:", error);
-      res.status(500).json({
-        error: "Error fetching orders",
-        details: error.message,
-      });
+      res.status(500).json({ error: "Error fetching orders" });
     }
   },
 
+  // Get orders for seller
+  getReceivedOrders: async (req, res) => {
+    try {
+      const records = await base("Orders")
+        .select({
+          filterByFormula: `SellerId = '${req.user.id}'`,
+          sort: [{ field: "CreatedAt", direction: "desc" }],
+        })
+        .all();
+
+      const orders = await Promise.all(
+        records.map(async (record) => {
+          const product = await base("Products").find(record.fields.ProductId);
+          const buyer = await base("Users").find(record.fields.BuyerId);
+          return {
+            id: record.id,
+            ProductId: record.fields.ProductId,
+            ProductName: product.fields.Name,
+            BuyerId: record.fields.BuyerId,
+            BuyerName: buyer.fields.username,
+            Quantity: record.fields.Quantity,
+            TotalPrice: record.fields.TotalPrice,
+            Status: record.fields.Status,
+            CreatedAt: record.fields.CreatedAt,
+          };
+        })
+      );
+
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ error: "Error fetching orders" });
+    }
+  },
+
+  // Update order status
   updateOrderStatus: async (req, res) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
 
-      if (!["Pending", "Completed", "Cancelled"].includes(status)) {
-        return res.status(400).json({
-          error: "Invalid status",
-          details: "Status must be Pending, Completed, or Cancelled",
-        });
+      // Verify seller ownership
+      const existingOrder = await base("Orders").find(id);
+      if (existingOrder.fields.SellerId !== req.user.id) {
+        return res
+          .status(403)
+          .json({ error: "Unauthorized to update this order" });
       }
 
-      const updatedOrder = await base("Orders").update([
+      const record = await base("Orders").update([
         {
-          id: id,
+          id,
           fields: {
             Status: status,
           },
         },
       ]);
 
-      res.json(updatedOrder);
+      res.json(record);
     } catch (error) {
-      console.error("Error updating order status:", error);
-      res.status(500).json({
-        error: "Error updating order status",
-        details: error.message,
-      });
+      console.error("Error updating order:", error);
+      res.status(500).json({ error: "Error updating order" });
     }
   },
 };
