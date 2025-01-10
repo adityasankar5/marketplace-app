@@ -1,153 +1,121 @@
 import React, { useState, useEffect } from "react";
 import {
   Grid,
-  Card,
-  CardContent,
-  CardMedia,
-  Typography,
-  Button,
-  CircularProgress,
   TextField,
   Container,
   Box,
-  CardActions,
-  IconButton,
+  InputAdornment,
+  Typography,
 } from "@mui/material";
-import EditIcon from "@mui/icons-material/Edit";
-import { useNavigate } from "react-router-dom";
+import { Search as SearchIcon } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
+import ProductCard from "./ProductCard";
+import Loading from "./common/Loading";
+import ErrorDisplay from "./common/ErrorDisplay";
+import Notification from "./common/Notification";
 
 function ProductList() {
-  const navigate = useNavigate();
-  const { user, hasRole } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+    type: "success",
+  });
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.getAllProducts();
+      setProducts(response.data || []); // Ensure products is always an array
+    } catch (err) {
+      setError("Failed to fetch products. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
-    try {
-      const response = await api.getAllProducts();
-      setProducts(response.data || []); // Ensure products is always an array
-      setLoading(false);
-    } catch (err) {
-      setError("Error fetching products");
-      setLoading(false);
-    }
-  };
-
-  const handleEditProduct = (e, productId) => {
-    e.stopPropagation();
-    navigate(`/edit-product/${productId}`);
-  };
-
-  const handleCardClick = (productId) => {
-    navigate(`/product/${productId}`);
-  };
-
-  const canEditProduct = (sellerId) => {
-    return user && hasRole("seller") && user.id === sellerId;
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
   };
 
   const filteredProducts = products.filter((product) => {
-    if (!product || !product.Name || !product.Description) return false;
-    return (
-      product.Name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.Description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Add null checks
+    if (!product) return false;
+
+    const searchLower = searchTerm.toLowerCase();
+    const nameMatch = product.Name
+      ? product.Name.toLowerCase().includes(searchLower)
+      : false;
+    const descriptionMatch = product.Description
+      ? product.Description.toLowerCase().includes(searchLower)
+      : false;
+
+    return nameMatch || descriptionMatch;
   });
 
-  if (loading)
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <CircularProgress />
-      </Box>
-    );
+  const handleNotificationClose = () => {
+    setNotification((prev) => ({ ...prev, open: false }));
+  };
 
-  if (error)
-    return (
-      <Box mt={4}>
-        <Typography color="error" align="center">
-          {error}
-        </Typography>
-      </Box>
-    );
+  if (loading) return <Loading message="Loading products..." />;
+  if (error) return <ErrorDisplay error={error} onRetry={fetchProducts} />;
 
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
         <TextField
           fullWidth
-          label="Search Products"
           variant="outlined"
+          placeholder="Search products..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
           sx={{ mb: 4 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
         />
 
         {filteredProducts.length === 0 ? (
-          <Typography align="center" sx={{ mt: 4 }}>
-            No products found
+          <Typography
+            variant="h6"
+            color="text.secondary"
+            align="center"
+            sx={{ mt: 4 }}
+          >
+            {searchTerm
+              ? "No products found matching your search"
+              : "No products available"}
           </Typography>
         ) : (
           <Grid container spacing={3}>
             {filteredProducts.map((product) => (
               <Grid item xs={12} sm={6} md={4} key={product.id}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    cursor: "pointer",
-                    "&:hover": {
-                      boxShadow: 6,
-                    },
-                  }}
-                  onClick={() => handleCardClick(product.id)}
-                >
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={
-                      product.ImageUrl || "https://via.placeholder.com/200"
-                    }
-                    alt={product.Name}
-                    sx={{ objectFit: "cover" }}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography gutterBottom variant="h5" component="h2">
-                      {product.Name}
-                    </Typography>
-                    <Typography noWrap>{product.Description}</Typography>
-                    <Typography variant="h6" color="primary" sx={{ mt: 2 }}>
-                      ${product.Price?.toFixed(2) || "0.00"}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button size="small" color="primary">
-                      View Details
-                    </Button>
-                    {canEditProduct(product.SellerId) && (
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={(e) => handleEditProduct(e, product.id)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    )}
-                  </CardActions>
-                </Card>
+                <ProductCard product={product} />
               </Grid>
             ))}
           </Grid>
         )}
       </Box>
+
+      <Notification
+        open={notification.open}
+        message={notification.message}
+        type={notification.type}
+        onClose={handleNotificationClose}
+      />
     </Container>
   );
 }
