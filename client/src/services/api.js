@@ -48,4 +48,24 @@ export const api = {
   getReceivedOrders: () => axios.get(`${API_URL}/orders/received-orders`),
   updateOrderStatus: (orderId, status) =>
     axios.patch(`${API_URL}/orders/${orderId}/status`, { status }),
+
+  // Error handler helper
+  handleError: (error) => {
+    const message =
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      error.message ||
+      "An error occurred";
+    return Promise.reject(message);
+  },
 };
+
+// Add error handling to all API calls
+Object.keys(api).forEach((key) => {
+  if (typeof api[key] === "function" && key !== "handleError") {
+    const originalFn = api[key];
+    api[key] = (...args) => originalFn(...args).catch(api.handleError);
+  }
+});
+
+export default api;

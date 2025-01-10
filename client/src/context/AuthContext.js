@@ -1,9 +1,9 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -16,19 +16,22 @@ export const AuthProvider = ({ children }) => {
         // Check if token is expired
         if (decoded.exp * 1000 < Date.now()) {
           localStorage.removeItem("token");
+          setUser(null);
         } else {
           setUser(decoded);
         }
       } catch (error) {
         localStorage.removeItem("token");
+        setUser(null);
       }
     }
     setLoading(false);
   }, []);
 
-  const login = (token, userData) => {
+  const login = (token) => {
     localStorage.setItem("token", token);
-    setUser(userData);
+    const decoded = jwtDecode(token);
+    setUser(decoded);
   };
 
   const logout = () => {
@@ -36,26 +39,34 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const isAuthenticated = () => !!user;
-
-  const hasRole = (role) => {
-    return user?.roles?.includes(role);
+  const isAuthenticated = () => {
+    return !!user;
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login,
-        logout,
-        isAuthenticated,
-        hasRole,
-        loading,
-      }}
-    >
-      {!loading && children}
-    </AuthContext.Provider>
-  );
-};
+  const hasRole = (role) => {
+    return user?.roles?.includes(role) || false;
+  };
 
-export const useAuth = () => useContext(AuthContext);
+  const value = {
+    user,
+    login,
+    logout,
+    hasRole,
+    isAuthenticated,
+    loading,
+  };
+
+  if (loading) {
+    return null; // or a loading spinner
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
