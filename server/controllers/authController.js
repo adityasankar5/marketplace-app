@@ -30,19 +30,15 @@ const authController = {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Format date for Airtable (YYYY-MM-DD)
-      const today = new Date();
-      const formattedDate = today.toISOString().split("T")[0];
-
       // Create user
       const record = await base("Users").create([
         {
           fields: {
-            username: username.trim(),
-            email: email.toLowerCase().trim(),
+            username,
+            email,
             password: hashedPassword,
-            roles: roles,
-            createdAt: formattedDate,
+            roles,
+            createdAt: new Date().toISOString().split("T")[0],
           },
         },
       ]);

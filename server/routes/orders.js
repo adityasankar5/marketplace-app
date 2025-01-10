@@ -6,7 +6,7 @@ const { authenticate, requireRole } = require("../middleware/auth");
 // Apply authentication middleware to all routes
 router.use(authenticate);
 
-// Order routes
+// Order routes with proper middleware and controller methods
 router.post("/", requireRole("buyer"), orderController.createOrder);
 router.get("/my-orders", requireRole("buyer"), orderController.getMyOrders);
 router.get(

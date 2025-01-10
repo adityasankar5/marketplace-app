@@ -52,14 +52,15 @@ function Orders() {
       const response = await (activeTab === 0
         ? api.getMyOrders()
         : api.getReceivedOrders());
+      console.log("Orders response:", response); // Add this for debugging
       setOrders(response.data || []);
     } catch (err) {
+      console.error("Error details:", err); // Add this for debugging
       setError("Failed to fetch orders");
     } finally {
       setLoading(false);
     }
   };
-
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await api.updateOrderStatus(orderId, newStatus);
@@ -84,7 +85,7 @@ function Orders() {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
       order.ProductName?.toLowerCase().includes(searchLower) ||
-      order.id.toLowerCase().includes(searchLower);
+      order.id?.toLowerCase().includes(searchLower);
     return matchesStatus && matchesSearch;
   });
 

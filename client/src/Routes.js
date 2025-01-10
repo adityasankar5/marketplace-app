@@ -7,6 +7,7 @@ import EditProduct from "./components/EditProduct";
 import Orders from "./components/Orders";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
+import Profile from "./components/Profile";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 function Routes() {
@@ -43,6 +44,15 @@ function Routes() {
         element={
           <ProtectedRoute>
             <Orders />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />

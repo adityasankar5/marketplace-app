@@ -16,18 +16,6 @@ axios.interceptors.request.use(
   }
 );
 
-// Add response interceptor for error handling
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const api = {
   // Auth endpoints
   login: (credentials) => axios.post(`${API_URL}/auth/login`, credentials),
@@ -48,24 +36,4 @@ export const api = {
   getReceivedOrders: () => axios.get(`${API_URL}/orders/received-orders`),
   updateOrderStatus: (orderId, status) =>
     axios.patch(`${API_URL}/orders/${orderId}/status`, { status }),
-
-  // Error handler helper
-  handleError: (error) => {
-    const message =
-      error.response?.data?.error ||
-      error.response?.data?.message ||
-      error.message ||
-      "An error occurred";
-    return Promise.reject(message);
-  },
 };
-
-// Add error handling to all API calls
-Object.keys(api).forEach((key) => {
-  if (typeof api[key] === "function" && key !== "handleError") {
-    const originalFn = api[key];
-    api[key] = (...args) => originalFn(...args).catch(api.handleError);
-  }
-});
-
-export default api;
