@@ -88,6 +88,13 @@ function Login() {
           >
             Don't have an account? Register
           </Button>
+          <p style={{ fontSize: "11px" }}>
+            <b>Accounts for testing:</b> <br></br>test1@example.com (buyer and
+            seller), buyer@gmail.com (buyer), seller@gmail.com (seller)
+          </p>
+          <p style={{ fontSize: "11px" }}>
+            <b>Password:</b> password123
+          </p>
         </Box>
       </Paper>
     </Container>
