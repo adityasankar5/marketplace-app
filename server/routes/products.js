@@ -3,11 +3,26 @@ const router = express.Router();
 const productController = require("../controllers/productController");
 const { authenticate, requireRole } = require("../middleware/auth");
 
-// Public routes (no authentication needed)
-router.get("/", productController.getAllProducts);
-router.get("/:id", productController.getProductById);
+// Remove authentication from these routes completely
+router.get("/", async (req, res) => {
+  try {
+    const records = await base("Products").select().all();
+    const products = records.map((record) => ({
+      id: record.id,
+      Name: record.fields.Name,
+      Description: record.fields.Description,
+      Price: record.fields.Price,
+      ImageUrl: record.fields.ImageUrl,
+      SellerId: record.fields.SellerId,
+    }));
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ error: "Error fetching products" });
+  }
+});
 
-// Protected routes (need authentication)
+// Protected routes
 router.post(
   "/",
   authenticate,
