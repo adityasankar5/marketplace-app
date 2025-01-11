@@ -1,9 +1,8 @@
 import axios from "axios";
 
-const API_URL =
-  "https://marketplaceapp-server-gent1vo2h-adityasankar-senguptas-projects.vercel.app";
+const API_URL = "https://marketplaceapp-server.vercel.app"; // Use the permanent URL from Vercel
 
-// Create axios instance
+// Create axios instance for authenticated requests
 const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
@@ -11,7 +10,15 @@ const axiosInstance = axios.create({
   },
 });
 
-// Request interceptor
+// Create public axios instance
+const publicAxios = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Request interceptor for authenticated requests
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -25,40 +32,26 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Only redirect to login if not already on login page
-      if (!window.location.pathname.includes("/login")) {
-        localStorage.removeItem("token");
-        window.location.href = "/login";
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const api = {
+  // Public endpoints
+  getAllProducts: () => publicAxios.get("/products"),
+  getProductById: (id) => publicAxios.get(`/products/${id}`),
+
   // Auth endpoints
-  login: (credentials) => axiosInstance.post("/auth/login", credentials),
-  register: (userData) => axiosInstance.post("/auth/register", userData),
+  login: (credentials) => axiosInstance.post("/api/auth/login", credentials),
+  register: (userData) => axiosInstance.post("/api/auth/register", userData),
 
-  // Public endpoints (no auth required)
-  getAllProducts: () => axios.get(`${API_URL}/products`), // Using axios directly
-  getProductById: (id) => axios.get(`${API_URL}/products/${id}`), // Using axios directly
-
-  // Protected endpoints (auth required)
-  createProduct: (productData) => axiosInstance.post("/products", productData),
+  // Protected endpoints
+  createProduct: (productData) =>
+    axiosInstance.post("/api/products", productData),
   updateProduct: (id, productData) =>
-    axiosInstance.put(`/products/${id}`, productData),
-  deleteProduct: (id) => axiosInstance.delete(`/products/${id}`),
+    axiosInstance.put(`/api/products/${id}`, productData),
+  deleteProduct: (id) => axiosInstance.delete(`/api/products/${id}`),
 
-  // Order endpoints (all protected)
-  createOrder: (orderData) => axiosInstance.post("/orders", orderData),
-  getMyOrders: () => axiosInstance.get("/orders/my-orders"),
-  getReceivedOrders: () => axiosInstance.get("/orders/received-orders"),
+  // Order endpoints
+  createOrder: (orderData) => axiosInstance.post("/api/orders", orderData),
+  getMyOrders: () => axiosInstance.get("/api/orders/my-orders"),
+  getReceivedOrders: () => axiosInstance.get("/api/orders/received-orders"),
   updateOrderStatus: (orderId, status) =>
-    axiosInstance.patch(`/orders/${orderId}/status`, { status }),
+    axiosInstance.patch(`/api/orders/${orderId}/status`, { status }),
 };
