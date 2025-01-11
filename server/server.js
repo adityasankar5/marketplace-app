@@ -34,12 +34,7 @@ app.use(express.json());
 // Public routes
 app.get("/products", async (req, res) => {
   try {
-    console.log("Fetching products from Airtable...");
-
-    // Test Airtable connection
     const records = await base("Products").select().all();
-    console.log(`Successfully fetched ${records.length} products`);
-
     const products = records.map((record) => ({
       id: record.id,
       Name: record.fields.Name,
@@ -48,20 +43,40 @@ app.get("/products", async (req, res) => {
       ImageUrl: record.fields.ImageUrl,
       SellerId: record.fields.SellerId,
     }));
-
     res.json(products);
   } catch (error) {
-    console.error("Detailed error fetching products:", {
-      message: error.message,
-      stack: error.stack,
-      error: error,
-    });
+    console.error("Error fetching products:", error);
+    res.status(500).json({ error: "Error fetching products" });
+  }
+});
 
-    res.status(500).json({
-      error: "Error fetching products",
-      details: error.message,
-      type: error.name,
-    });
+// Get single product
+app.get("/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const record = await base("Products").find(id);
+
+    if (!record) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    const product = {
+      id: record.id,
+      Name: record.fields.Name,
+      Description: record.fields.Description,
+      Price: record.fields.Price,
+      ImageUrl: record.fields.ImageUrl,
+      SellerId: record.fields.SellerId,
+    };
+
+    res.json(product);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    if (error.error === "NOT_FOUND") {
+      res.status(404).json({ error: "Product not found" });
+    } else {
+      res.status(500).json({ error: "Error fetching product" });
+    }
   }
 });
 
