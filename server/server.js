@@ -7,12 +7,15 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ["https://marketplaceapp-one.vercel.app/", "localhost:3000"],
-    credentials: true,
+    origin:
+      "https://marketplaceapp-5bpgdzowg-adityasankar-senguptas-projects.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json());
+app.options("*", cors()); // Enable pre-flight for all routes
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));

@@ -2,14 +2,16 @@ import axios from "axios";
 
 const API_URL =
   process.env.REACT_APP_API_URL ||
-  "https://marketplaceserver-q9tv3r91z-adityasankar-senguptas-projects.vercel.app/";
+  "https://marketplaceserver-q9tv3r91z-adityasankar-senguptas-projects.vercel.app";
 // Add request interceptor to include auth token
+axios.defaults.withCredentials = true;
 axios.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.withCredentials = true;
     return config;
   },
   (error) => {
