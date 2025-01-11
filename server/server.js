@@ -9,6 +9,7 @@ app.use(
   cors({
     origin: ["https://marketplaceapp-one.vercel.app/", "localhost:3000"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );
 app.use(express.json());

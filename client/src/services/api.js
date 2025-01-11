@@ -1,7 +1,8 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
-
+const API_URL =
+  process.env.REACT_APP_API_URL ||
+  "https://marketplaceserver-q9tv3r91z-adityasankar-senguptas-projects.vercel.app/";
 // Add request interceptor to include auth token
 axios.interceptors.request.use(
   (config) => {
