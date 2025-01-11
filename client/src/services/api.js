@@ -1,17 +1,23 @@
 import axios from "axios";
 
 const API_URL =
-  process.env.REACT_APP_API_URL ||
-  "https://marketplaceserver-q9tv3r91z-adityasankar-senguptas-projects.vercel.app";
-// Add request interceptor to include auth token
-axios.defaults.withCredentials = true;
-axios.interceptors.request.use(
+  "https://marketplaceapp-server-gent1vo2h-adityasankar-senguptas-projects.vercel.app";
+
+// Create axios instance
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Request interceptor
+axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    config.withCredentials = true;
     return config;
   },
   (error) => {
@@ -21,22 +27,21 @@ axios.interceptors.request.use(
 
 export const api = {
   // Auth endpoints
-  login: (credentials) => axios.post(`${API_URL}/auth/login`, credentials),
-  register: (userData) => axios.post(`${API_URL}/auth/register`, userData),
+  login: (credentials) => axiosInstance.post("/auth/login", credentials),
+  register: (userData) => axiosInstance.post("/auth/register", userData),
 
   // Product endpoints
-  getAllProducts: () => axios.get(`${API_URL}/products`),
-  getProductById: (id) => axios.get(`${API_URL}/products/${id}`),
-  createProduct: (productData) =>
-    axios.post(`${API_URL}/products`, productData),
+  getAllProducts: () => axiosInstance.get("/products"),
+  getProductById: (id) => axiosInstance.get(`/products/${id}`),
+  createProduct: (productData) => axiosInstance.post("/products", productData),
   updateProduct: (id, productData) =>
-    axios.put(`${API_URL}/products/${id}`, productData),
-  deleteProduct: (id) => axios.delete(`${API_URL}/products/${id}`),
+    axiosInstance.put(`/products/${id}`, productData),
+  deleteProduct: (id) => axiosInstance.delete(`/products/${id}`),
 
   // Order endpoints
-  createOrder: (orderData) => axios.post(`${API_URL}/orders`, orderData),
-  getMyOrders: () => axios.get(`${API_URL}/orders/my-orders`),
-  getReceivedOrders: () => axios.get(`${API_URL}/orders/received-orders`),
+  createOrder: (orderData) => axiosInstance.post("/orders", orderData),
+  getMyOrders: () => axiosInstance.get("/orders/my-orders"),
+  getReceivedOrders: () => axiosInstance.get("/orders/received-orders"),
   updateOrderStatus: (orderId, status) =>
-    axios.patch(`${API_URL}/orders/${orderId}/status`, { status }),
+    axiosInstance.patch(`/orders/${orderId}/status`, { status }),
 };

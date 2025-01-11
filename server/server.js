@@ -4,18 +4,32 @@ require("dotenv").config();
 
 const app = express();
 
-// Middleware
+// CORS configuration
+const allowedOrigins = [
+  "https://marketplaceapp-f1mdmuvz8-adityasankar-senguptas-projects.vercel.app",
+  "http://localhost:3000",
+];
+
+// Apply CORS before any routes
 app.use(
   cors({
-    origin:
-      "https://marketplaceapp-5bpgdzowg-adityasankar-senguptas-projects.vercel.app",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Enable pre-flight requests for all routes
+app.options("*", cors());
+
+// Body parser middleware
 app.use(express.json());
-app.options("*", cors()); // Enable pre-flight for all routes
+
+// Test route
+app.get("/", (req, res) => {
+  res.json({ message: "Marketplace API is running" });
+});
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
