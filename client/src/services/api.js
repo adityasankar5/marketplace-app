@@ -25,20 +25,37 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+// Response interceptor
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Only redirect to login if not already on login page
+      if (!window.location.pathname.includes("/login")) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const api = {
   // Auth endpoints
   login: (credentials) => axiosInstance.post("/auth/login", credentials),
   register: (userData) => axiosInstance.post("/auth/register", userData),
 
-  // Product endpoints
-  getAllProducts: () => axiosInstance.get("/products"),
-  getProductById: (id) => axiosInstance.get(`/products/${id}`),
+  // Public endpoints (no auth required)
+  getAllProducts: () => axios.get(`${API_URL}/products`), // Using axios directly
+  getProductById: (id) => axios.get(`${API_URL}/products/${id}`), // Using axios directly
+
+  // Protected endpoints (auth required)
   createProduct: (productData) => axiosInstance.post("/products", productData),
   updateProduct: (id, productData) =>
     axiosInstance.put(`/products/${id}`, productData),
   deleteProduct: (id) => axiosInstance.delete(`/products/${id}`),
 
-  // Order endpoints
+  // Order endpoints (all protected)
   createOrder: (orderData) => axiosInstance.post("/orders", orderData),
   getMyOrders: () => axiosInstance.get("/orders/my-orders"),
   getReceivedOrders: () => axiosInstance.get("/orders/received-orders"),

@@ -33,6 +33,7 @@ function ProductList() {
       const response = await api.getAllProducts();
       setProducts(response.data || []); // Ensure products is always an array
     } catch (err) {
+      console.error("Error fetching products:", err);
       setError("Failed to fetch products. Please try again later.");
     } finally {
       setLoading(false);

@@ -12,7 +12,6 @@ const productController = {
         Price: record.fields.Price,
         ImageUrl: record.fields.ImageUrl,
         SellerId: record.fields.SellerId,
-        CreatedAt: record.fields.CreatedAt,
       }));
       res.json(products);
     } catch (error) {

@@ -7,7 +7,7 @@ const { authenticate, requireRole } = require("../middleware/auth");
 router.get("/", productController.getAllProducts);
 router.get("/:id", productController.getProductById);
 
-// Protected routes
+// Protected routes (need authentication)
 router.post(
   "/",
   authenticate,
